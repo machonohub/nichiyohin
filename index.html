@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>日用品 & 買い物</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;background:#0d0d1a;color:#e8e8ff;min-height:100vh;overflow-x:hidden;}
+
+    /* ══ SLIDER ══ */
+    .viewport{width:100%;max-width:390px;margin:0 auto;overflow:hidden;position:relative;}
+    .slider{display:flex;width:200%;transition:transform .35s cubic-bezier(.25,.46,.45,.94);will-change:transform;}
+    .page{width:50%;min-height:100vh;flex-shrink:0;background:#0d0d1a;padding-bottom:100px;position:relative;}
+
+    /* ══ PAGE DOTS ══ */
+    .page-dots{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:90;cursor:pointer;}
+    .pg-dot{height:6px;border-radius:3px;background:rgba(255,255,255,.2);transition:all .3s;}
+    .pg-dot.active{width:22px;background:rgba(255,255,255,.8);}
+    .pg-dot:not(.active){width:6px;}
+
+    /* ══ SHARED HEADER ══ */
+    header{padding:20px 16px 14px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);}
+    .hh-head{background:linear-gradient(180deg,#1a1a2e 0%,rgba(13,13,26,.95) 100%);}
+    .gr-head{background:linear-gradient(180deg,#0a1628 0%,rgba(13,13,26,.95) 100%);}
+    .h-row{display:flex;justify-content:space-between;align-items:center;}
+    .h-title-hh{font-size:20px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff 30%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:pointer;user-select:none;-webkit-user-select:none;}
+    .h-title-gr{font-size:20px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff 30%,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:pointer;user-select:none;-webkit-user-select:none;}
+    .h-title-hh::after{content:' ›';font-size:16px;opacity:.5;}
+    .h-title-gr::before{content:'‹ ';font-size:16px;opacity:.5;}
+    .h-right{display:flex;gap:6px;align-items:center;}
+
+    /* segmented controls */
+    .seg-ctrl{display:flex;background:rgba(255,255,255,.08);border-radius:10px;padding:2px;border:1px solid rgba(255,255,255,.1);}
+    .seg-btn{padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);border:none;background:none;cursor:pointer;white-space:nowrap;transition:all .2s;}
+    .seg-btn.active-orange{background:linear-gradient(135deg,#ff8c42,#f97316);color:#fff;box-shadow:0 2px 8px rgba(255,140,66,.4);}
+    .seg-btn.active-blue  {background:linear-gradient(135deg,#00b4d8,#0077b6);color:#fff;box-shadow:0 2px 8px rgba(0,180,216,.4);}
+
+    .btn-add-hh{background:linear-gradient(135deg,#ff8c42,#f97316);border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:7px 13px;cursor:pointer;box-shadow:0 2px 10px rgba(255,140,66,.35);}
+    .btn-add-gr{background:linear-gradient(135deg,#00b4d8,#0077b6);border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:7px 13px;cursor:pointer;box-shadow:0 2px 10px rgba(0,180,216,.35);}
+    .btn-add-hh:active,.btn-add-gr:active{opacity:.8;}
+    .btn-gear{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:9px;color:rgba(255,255,255,.6);font-size:16px;padding:6px 9px;cursor:pointer;}
+    .btn-gear:active{opacity:.7;}
+
+    .h-sync{display:flex;align-items:center;gap:5px;margin-top:6px;}
+    .sync-dot{width:5px;height:5px;border-radius:50%;}
+    .sync-dot.ok  {background:#00d4aa;box-shadow:0 0 6px #00d4aa;}
+    .sync-dot.busy{background:#ff8c42;animation:blink .8s infinite;}
+    .sync-dot.err {background:#ff4569;}
+    .sync-dot.def {background:rgba(255,255,255,.2);}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+    .sync-txt{font-size:11px;color:rgba(255,255,255,.3);}
+
+    /* ══ ALERT BAR ══ */
+    .alert-bar{background:linear-gradient(135deg,rgba(255,140,66,.2),rgba(249,115,22,.15));border:1px solid rgba(255,140,66,.3);color:#ff8c42;padding:8px 16px;font-size:12px;font-weight:700;display:none;align-items:center;justify-content:space-between;margin:10px 14px 0;border-radius:12px;}
+    .alert-bar.on{display:flex;}
+    .btn-restock-all{background:rgba(255,140,66,.2);border:1px solid rgba(255,140,66,.4);border-radius:7px;color:#ff8c42;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;}
+
+    /* ══ MAIN CONTENT ══ */
+    main{padding:12px 14px;}
+    .cat-section{margin-bottom:18px;}
+    .cat-label{font-size:12px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;padding:0 4px;margin-bottom:8px;}
+    .cat-label span{margin-right:6px;}
+    .cat-group{background:#1a1a2e;border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;}
+
+    /* ══ HOUSEHOLD ITEM ROW ══ */
+    .item-row{display:flex;align-items:center;padding:10px 14px;gap:10px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;position:relative;user-select:none;-webkit-user-select:none;transition:all .15s;}
+    .item-row:last-child{border-bottom:none;}
+    .item-row:active{background:rgba(255,255,255,.04);}
+    .item-row::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;transition:all .15s;}
+    /* OK — muted like grocery off-state */
+    .item-row.s-ok{opacity:.38;}
+    .item-row.s-ok::before{background:transparent;box-shadow:none;}
+    /* LOW / OUT — highlighted */
+    .item-row.s-low::before{background:#ff8c42;box-shadow:0 0 6px #ff8c42;}
+    .item-row.s-out::before{background:#ff4569;box-shadow:0 0 6px #ff4569;}
+    .item-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:all .15s;}
+    .s-ok  .item-dot{background:rgba(255,255,255,.2);box-shadow:none;}
+    .s-low .item-dot{background:#ff8c42;box-shadow:0 0 5px #ff8c42;}
+    .s-out .item-dot{background:#ff4569;box-shadow:0 0 5px #ff4569;}
+    .item-name{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .15s;}
+    .s-ok  .item-name{font-weight:400;color:rgba(224,224,248,.7);}
+    .s-low .item-name,.s-out .item-name{font-weight:700;color:#e0e0f8;}
+    .item-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+    .s-ok  .item-badge{color:rgba(255,255,255,.2);background:none;border:1px solid rgba(255,255,255,.08);}
+    .s-low .item-badge{color:#ff8c42;background:rgba(255,140,66,.12);border:1px solid rgba(255,140,66,.25);}
+    .s-out .item-badge{color:#ff4569;background:rgba(255,69,105,.15);border:1px solid rgba(255,69,105,.3);}
+    .btn-edit-item{background:none;border:none;color:rgba(255,255,255,.2);font-size:14px;cursor:pointer;padding:4px 2px;flex-shrink:0;}
+    .btn-edit-item:active{color:rgba(255,255,255,.5);}
+
+    /* ══ GROCERY ITEM ROW ══ */
+    .gr-row{display:flex;align-items:center;padding:10px 14px;gap:9px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;position:relative;user-select:none;-webkit-user-select:none;transition:all .15s;}
+    .gr-row:last-child{border-bottom:none;}
+    .gr-row:active{background:rgba(255,255,255,.04);}
+    .gr-row::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;transition:all .15s;}
+    /* OFF state — muted */
+    .gr-row.g-off{opacity:.38;}
+    .gr-row.g-off::before{background:transparent;}
+    /* ON state — highlighted */
+    .gr-row.g-on{opacity:1;}
+    .gr-row.g-on::before{background:#00c6ff;box-shadow:0 0 6px #00c6ff;}
+    .gr-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:all .15s;}
+    .g-off .gr-dot{background:rgba(255,255,255,.2);}
+    .g-on  .gr-dot{background:#00c6ff;box-shadow:0 0 5px #00c6ff;}
+    .gr-fav{font-size:11px;flex-shrink:0;color:#f59e0b;line-height:1;}
+    .gr-name{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .15s;}
+    .g-off .gr-name{font-weight:400;color:rgba(224,224,248,.7);}
+    .g-on  .gr-name{font-weight:700;color:#e0e0f8;}
+    .gr-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+    .g-off .gr-badge{color:rgba(255,255,255,.2);background:none;border:1px solid rgba(255,255,255,.08);}
+    .g-on  .gr-badge{color:#00c6ff;background:rgba(0,198,255,.12);border:1px solid rgba(0,198,255,.3);}
+    .btn-gr-edit{background:none;border:none;color:rgba(255,255,255,.2);font-size:14px;cursor:pointer;padding:4px 2px;flex-shrink:0;}
+    .btn-gr-edit:active{color:rgba(255,255,255,.5);}
+
+    /* ══ EMPTY ══ */
+    .empty{text-align:center;color:rgba(255,255,255,.2);padding:60px 20px;font-size:13px;}
+    .empty .ei{font-size:40px;margin-bottom:12px;opacity:.5;}
+
+    /* ══ MODAL BASE ══ */
+    .modal-over{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;justify-content:center;align-items:flex-end;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+    .modal-over.open{display:flex;}
+    .modal{background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:22px 22px 0 0;width:100%;max-width:390px;padding:16px 18px 48px;}
+    .modal-handle{width:36px;height:3px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px;}
+    .modal h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#e8e8ff;}
+    .f-label{font-size:11px;color:rgba(255,255,255,.4);font-weight:700;display:block;margin:12px 0 4px;}
+    .f-input,.f-select{width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);font-size:15px;background:rgba(255,255,255,.06);color:#e8e8ff;-webkit-appearance:none;}
+    .f-input::placeholder{color:rgba(255,255,255,.25);}
+    .f-input:focus,.f-select:focus{outline:none;border-color:#ff8c42;background:rgba(255,140,66,.06);}
+    .f-input-gr:focus,.f-select-gr:focus{border-color:#00c6ff !important;background:rgba(0,198,255,.05) !important;}
+    .f-select option{background:#1a1a2e;color:#e8e8ff;}
+    .f-row{display:flex;gap:8px;}
+    .f-row>div{flex:1;}
+    .f-hint{font-size:10px;color:rgba(255,255,255,.25);margin-top:3px;}
+    .modal-foot{display:flex;gap:7px;margin-top:18px;}
+    .btn-m-cancel{flex:1;padding:13px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);font-size:14px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.6);}
+    .btn-m-ok-hh{flex:2;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff8c42,#f97316);font-size:14px;font-weight:700;cursor:pointer;color:#fff;box-shadow:0 4px 14px rgba(255,140,66,.35);}
+    .btn-m-ok-gr{flex:2;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#00b4d8,#0077b6);font-size:14px;font-weight:700;cursor:pointer;color:#fff;box-shadow:0 4px 14px rgba(0,180,216,.35);}
+    .btn-m-ok-hh:active,.btn-m-ok-gr:active{opacity:.85;}
+    .btn-m-del{padding:13px 14px;border-radius:12px;border:1px solid rgba(255,69,105,.3);background:rgba(255,69,105,.12);font-size:14px;font-weight:600;cursor:pointer;color:#ff4569;}
+
+    /* fav toggle in modal */
+    .fav-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px;}
+    .fav-toggle-label{font-size:13px;color:rgba(255,255,255,.7);}
+    .fav-toggle{position:relative;width:44px;height:26px;cursor:pointer;}
+    .fav-toggle input{opacity:0;width:0;height:0;}
+    .fav-slider{position:absolute;inset:0;background:rgba(255,255,255,.12);border-radius:13px;transition:.3s;}
+    .fav-slider::before{content:'';position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+    input:checked+.fav-slider{background:#f59e0b;}
+    input:checked+.fav-slider::before{transform:translateX(18px);}
+
+    /* ══ CATEGORY MANAGEMENT ══ */
+    #cat-mgr-hh,#cat-edit-hh,#cat-mgr-gr,#cat-edit-gr{z-index:450;}
+    .cat-mgr-list{margin-bottom:12px;}
+    .cat-mgr-row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid rgba(255,255,255,.06);}
+    .cat-mgr-row:last-child{border-bottom:none;}
+    .cat-mgr-emoji{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
+    .cat-mgr-name{flex:1;font-size:14px;font-weight:600;color:#e8e8ff;}
+    .cat-mgr-count{font-size:11px;color:rgba(255,255,255,.25);margin-right:4px;}
+    .btn-cat-edit{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;padding:5px 11px;cursor:pointer;}
+    .btn-add-cat{width:100%;padding:13px;border-radius:12px;border:1.5px dashed rgba(255,255,255,.15);background:none;font-size:14px;font-weight:600;color:rgba(255,255,255,.4);cursor:pointer;}
+    .emoji-name-row{display:flex;gap:8px;}
+    .f-input-emoji{width:62px;flex-shrink:0;padding:10px 8px;text-align:center;font-size:22px;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#e8e8ff;}
+    .f-input-emoji:focus{outline:none;border-color:#ff8c42;}
+    .f-input-cat-name{flex:1;padding:10px 13px;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);font-size:15px;background:rgba(255,255,255,.06);color:#e8e8ff;}
+    .f-input-cat-name::placeholder{color:rgba(255,255,255,.25);}
+    .f-input-cat-name:focus{outline:none;border-color:#ff8c42;}
+
+    /* ══ SETTINGS SCREEN ══ */
+    .sett-screen{display:none;position:fixed;inset:0;background:#0d0d1a;z-index:400;overflow-y:auto;}
+    .sett-screen.open{display:block;}
+    .sett-head{padding:20px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06);}
+    .sett-head-hh{background:linear-gradient(180deg,#1a1a2e 0%,rgba(13,13,26,.95) 100%);}
+    .sett-head-gr{background:linear-gradient(180deg,#0a1628 0%,rgba(13,13,26,.95) 100%);}
+    .sett-head h2{font-size:17px;font-weight:700;color:#e8e8ff;}
+    .btn-back-hh{background:none;border:none;color:#ff8c42;font-size:14px;font-weight:700;cursor:pointer;}
+    .btn-back-gr{background:none;border:none;color:#00c6ff;font-size:14px;font-weight:700;cursor:pointer;}
+    .sett-body{padding:14px;max-width:390px;margin:0 auto;}
+    .sett-card{background:#1a1a2e;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:16px;margin-bottom:10px;}
+    .sett-card h3{font-size:13px;font-weight:700;margin-bottom:5px;color:#e8e8ff;}
+    .sett-card p{font-size:11px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:12px;}
+    .step-ol{list-style:none;counter-reset:s;}
+    .step-ol li{counter-increment:s;padding:6px 0 6px 28px;position:relative;font-size:11px;color:rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.05);line-height:1.5;}
+    .step-ol li:last-child{border-bottom:none;}
+    .step-ol li::before{content:counter(s);position:absolute;left:0;top:7px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#ff8c42,#f97316);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+    .step-ol a{color:#ff8c42;}
+    .s-input{width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);font-size:12px;background:rgba(255,255,255,.06);color:#e8e8ff;margin-bottom:8px;font-family:monospace;}
+    .s-input::placeholder{color:rgba(255,255,255,.25);}
+    .s-input:focus{outline:none;border-color:#ff8c42;}
+    .btn-s{width:100%;padding:12px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:6px;}
+    .btn-s.dark-hh{background:linear-gradient(135deg,#ff8c42,#f97316);color:#fff;box-shadow:0 3px 12px rgba(255,140,66,.3);}
+    .btn-s.dark-gr{background:linear-gradient(135deg,#00b4d8,#0077b6);color:#fff;box-shadow:0 3px 12px rgba(0,180,216,.3);}
+    .btn-s.gray{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1);}
+    .btn-s.red {background:rgba(255,69,105,.15);color:#ff4569;border:1px solid rgba(255,69,105,.3);}
+    .s-msg{padding:9px 12px;border-radius:10px;font-size:11px;font-weight:600;margin-bottom:8px;display:none;white-space:pre-line;}
+    .s-msg.show{display:block;}
+    .s-msg.ok {background:rgba(0,212,170,.12);color:#00d4aa;border:1px solid rgba(0,212,170,.2);}
+    .s-msg.err{background:rgba(255,69,105,.12);color:#ff4569;border:1px solid rgba(255,69,105,.2);}
+
+    /* ══ WIZARD ══ */
+    #wizard{display:none;position:fixed;inset:0;background:#0d0d1a;z-index:500;overflow-y:auto;}
+    #wizard.open{display:block;}
+    .wiz-body{padding:52px 24px 40px;max-width:390px;margin:0 auto;}
+    .wiz-logo{font-size:60px;text-align:center;margin-bottom:20px;}
+    .wiz-title{font-size:28px;font-weight:800;text-align:center;margin-bottom:8px;background:linear-gradient(135deg,#fff 30%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .wiz-sub{font-size:14px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:36px;line-height:1.6;}
+    .wiz-card{background:#1a1a2e;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:10px;}
+    .wiz-card h3{font-size:14px;font-weight:700;color:#e8e8ff;margin-bottom:5px;}
+    .wiz-card p{font-size:12px;color:rgba(255,255,255,.4);line-height:1.6;}
+    .btn-wiz-start{width:100%;padding:16px;border-radius:14px;border:none;background:linear-gradient(135deg,#ff8c42,#f97316);color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:24px;box-shadow:0 6px 24px rgba(255,140,66,.4);}
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ SLIDER ══════════════ -->
+<div class="viewport">
+<div class="slider" id="slider">
+
+  <!-- ━━━━━ PAGE 0: 日用品管理 ━━━━━ -->
+  <div class="page">
+    <header class="hh-head">
+      <div class="h-row">
+        <span class="h-title-hh" onclick="switchPage(1)" title="買い物リストへ">🏠 日用品</span>
+        <div class="h-right">
+          <div class="seg-ctrl">
+            <button class="seg-btn active-orange" data-f="all"       onclick="setHhFilter('all')">すべて</button>
+            <button class="seg-btn"               data-f="attention" onclick="setHhFilter('attention')">要補充</button>
+          </div>
+          <button class="btn-add-hh" onclick="openHhAdd()">＋ 追加</button>
+          <button class="btn-gear"   onclick="openHhSett()">⚙</button>
+        </div>
+      </div>
+      <div class="h-sync">
+        <div class="sync-dot def" id="hh-sdot"></div>
+        <span class="sync-txt" id="hh-stxt">--</span>
+      </div>
+    </header>
+    <div class="alert-bar" id="hh-alert">
+      <span>⚠️ 補充が必要</span>
+      <button class="btn-restock-all" onclick="restockAll()">全て在庫ありにする</button>
+    </div>
+    <main id="hh-mc"></main>
+  </div>
+
+  <!-- ━━━━━ PAGE 1: 食料品買い物リスト ━━━━━ -->
+  <div class="page">
+    <header class="gr-head">
+      <div class="h-row">
+        <span class="h-title-gr" onclick="switchPage(0)" title="日用品管理へ">🛒 買い物</span>
+        <div class="h-right">
+          <div class="seg-ctrl">
+            <button class="seg-btn active-blue" data-gf="all"    onclick="setGrFilter('all')">全て</button>
+            <button class="seg-btn"             data-gf="buying" onclick="setGrFilter('buying')">買うもの</button>
+          </div>
+          <button class="btn-add-gr" onclick="openGrAdd()">＋ 追加</button>
+          <button class="btn-gear"   onclick="openGrSett()">⚙</button>
+        </div>
+      </div>
+      <div class="h-sync">
+        <div class="sync-dot def" id="gr-sdot"></div>
+        <span class="sync-txt" id="gr-stxt">--</span>
+      </div>
+    </header>
+    <main id="gr-mc"></main>
+  </div>
+
+</div><!-- /slider -->
+</div><!-- /viewport -->
+
+<!-- Page dots -->
+<div class="page-dots">
+  <div class="pg-dot active" onclick="switchPage(0)"></div>
+  <div class="pg-dot"        onclick="switchPage(1)"></div>
+</div>
+
+<!-- ══════════ HOUSEHOLD MODALS ══════════ -->
+<div class="modal-over" id="hh-add-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>アイテムを追加</h2>
+    <label class="f-label">商品名</label>
+    <input class="f-input" id="ha-name" type="text" placeholder="例：トイレットペーパー" maxlength="20">
+    <div class="f-row">
+      <div><label class="f-label">カテゴリ</label><select class="f-select" id="ha-cat"></select></div>
+      <div>
+        <label class="f-label">残り少ない時の数</label>
+        <input class="f-input" id="ha-low" type="number" placeholder="例: 2" min="1" max="99">
+        <div class="f-hint">「残り〇個」と表示</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-m-cancel" onclick="closeHhAdd()">キャンセル</button>
+      <button class="btn-m-ok-hh"  onclick="addHhItem()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-over" id="hh-edit-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>編集</h2>
+    <input type="hidden" id="he-id">
+    <label class="f-label">商品名</label>
+    <input class="f-input" id="he-name" type="text" maxlength="20">
+    <div class="f-row">
+      <div><label class="f-label">カテゴリ</label><select class="f-select" id="he-cat"></select></div>
+      <div>
+        <label class="f-label">残り少ない時の数</label>
+        <input class="f-input" id="he-low" type="number" placeholder="例: 2" min="1" max="99">
+        <div class="f-hint">「残り〇個」と表示</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-m-del"    onclick="deleteHhItem()">削除</button>
+      <button class="btn-m-cancel" onclick="closeHhEdit()">キャンセル</button>
+      <button class="btn-m-ok-hh"  onclick="saveHhEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-over" id="cat-mgr-hh">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>カテゴリを管理（日用品）</h2>
+    <div class="cat-mgr-list" id="hh-cat-list"></div>
+    <button class="btn-add-cat" onclick="openHhCatEdit(-1)">＋ カテゴリを追加</button>
+  </div>
+</div>
+<div class="modal-over" id="cat-edit-hh">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="hh-cat-edit-title">カテゴリを編集</h2>
+    <label class="f-label">絵文字　　名前</label>
+    <div class="emoji-name-row">
+      <input class="f-input-emoji" id="hce-emoji" type="text" maxlength="2" placeholder="📦">
+      <input class="f-input-cat-name" id="hce-name" type="text" maxlength="12" placeholder="カテゴリ名">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-m-del"    id="hce-del-btn" onclick="deleteHhCat()">削除</button>
+      <button class="btn-m-cancel" onclick="closeHhCatEdit()">キャンセル</button>
+      <button class="btn-m-ok-hh"  onclick="saveHhCatEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ GROCERY MODALS ══════════ -->
+<div class="modal-over" id="gr-add-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>アイテムを追加</h2>
+    <label class="f-label">商品名</label>
+    <input class="f-input f-input-gr" id="ga-name" type="text" placeholder="例：たまねぎ" maxlength="20">
+    <label class="f-label">カテゴリ</label>
+    <select class="f-select f-select-gr" id="ga-cat"></select>
+    <div class="fav-toggle-row">
+      <span class="fav-toggle-label">⭐ 定番として上位に表示</span>
+      <label class="fav-toggle"><input type="checkbox" id="ga-fav"><span class="fav-slider"></span></label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-m-cancel" onclick="closeGrAdd()">キャンセル</button>
+      <button class="btn-m-ok-gr"  onclick="addGrItem()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-over" id="gr-edit-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>編集</h2>
+    <input type="hidden" id="ge-id">
+    <label class="f-label">商品名</label>
+    <input class="f-input f-input-gr" id="ge-name" type="text" maxlength="20">
+    <label class="f-label">カテゴリ</label>
+    <select class="f-select f-select-gr" id="ge-cat"></select>
+    <div class="fav-toggle-row">
+      <span class="fav-toggle-label">⭐ 定番として上位に表示</span>
+      <label class="fav-toggle"><input type="checkbox" id="ge-fav"><span class="fav-slider"></span></label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-m-del"    onclick="deleteGrItem()">削除</button>
+      <button class="btn-m-cancel" onclick="closeGrEdit()">キャンセル</button>
+      <button class="btn-m-ok-gr"  onclick="saveGrEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-over" id="cat-mgr-gr">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>カテゴリを管理（買い物）</h2>
+    <div class="cat-mgr-list" id="gr-cat-list"></div>
+    <button class="btn-add-cat" onclick="openGrCatEdit(-1)">＋ カテゴリを追加</button>
+  </div>
+</div>
+<div class="modal-over" id="cat-edit-gr">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="gr-cat-edit-title">カテゴリを編集</h2>
+    <label class="f-label">絵文字　　名前</label>
+    <div class="emoji-name-row">
+      <input class="f-input-emoji" id="gce-emoji" type="text" maxlength="2" placeholder="🥬">
+      <input class="f-input-cat-name" id="gce-name" type="text" maxlength="12" placeholder="カテゴリ名">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-m-del"    id="gce-del-btn" onclick="deleteGrCat()">削除</button>
+      <button class="btn-m-cancel" onclick="closeGrCatEdit()">キャンセル</button>
+      <button class="btn-m-ok-gr"  onclick="saveGrCatEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SETTINGS SCREENS ══════════ -->
+<div class="sett-screen" id="hh-sett">
+  <div class="sett-head sett-head-hh">
+    <button class="btn-back-hh" onclick="closeHhSett()">← 戻る</button>
+    <h2>設定（日用品）</h2>
+  </div>
+  <div class="sett-body">
+    <div class="sett-card">
+      <h3>🗂 カテゴリを管理</h3><p>カテゴリの追加・編集・削除ができます。</p>
+      <button class="btn-s dark-hh" onclick="openHhCatMgr()">カテゴリを管理する</button>
+    </div>
+    <div class="sett-card">
+      <h3>🔗 2人で共有（GitHub Gist）</h3>
+      <p>GitHubのGistをデータ置き場として使い、日用品・買い物リスト両方を同期します。奥さんはURLを開くだけでOK。</p>
+      <ol class="step-ol">
+        <li><a href="https://gist.github.com/" target="_blank">gist.github.com</a> を開き、ファイル名を <code style="font-size:10px;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">nichiyohin_data.json</code>、内容を <code style="font-size:10px;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">{}</code> にして「Create secret gist」</li>
+        <li>作成されたGistのURL末尾の英数字をコピー（例：<code style="font-size:10px;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">a1b2c3d4e5f6...</code>）</li>
+        <li><a href="https://github.com/settings/tokens/new?scopes=gist&description=nichiyohin-app" target="_blank">こちら</a>でトークンを発行（scopeは「gist」のみ、有効期限はお好みで）</li>
+        <li>生成されたトークン（<code style="font-size:10px;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">ghp_...</code>）をコピー</li>
+        <li>下の欄に入力して「接続する」</li>
+      </ol>
+      <label class="f-label" style="margin-top:14px;">Gist ID（URLの末尾の英数字）</label>
+      <input class="s-input" id="gist-id-in" type="text" placeholder="例：a1b2c3d4e5f6g7h8i9j0">
+      <label class="f-label">Personal Access Token</label>
+      <input class="s-input" id="gist-token-in" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      <div class="s-msg" id="fb-msg"></div>
+      <button class="btn-s dark-hh" onclick="connectGist()">🔗 接続する・テストする</button>
+      <button class="btn-s gray" id="btn-disconnect" style="display:none" onclick="disconnectGist()">🔌 連携を解除する</button>
+    </div>
+    <div class="sett-card">
+      <h3>🗑 日用品データをリセット</h3><p>全アイテムとカテゴリを初期状態に戻します。</p>
+      <button class="btn-s red" onclick="resetHh()">リセットする</button>
+    </div>
+    <div class="sett-card" style="text-align:center;"><p style="color:rgba(255,255,255,.2);font-size:10px;">日用品 & 買い物アプリ v6.0 · Claude Cowork で作成</p></div>
+  </div>
+</div>
+
+<div class="sett-screen" id="gr-sett">
+  <div class="sett-head sett-head-gr">
+    <button class="btn-back-gr" onclick="closeGrSett()">← 戻る</button>
+    <h2>設定（買い物リスト）</h2>
+  </div>
+  <div class="sett-body">
+    <div class="sett-card">
+      <h3>🗂 カテゴリを管理</h3><p>カテゴリの追加・編集・削除ができます。</p>
+      <button class="btn-s dark-gr" onclick="openGrCatMgr()">カテゴリを管理する</button>
+    </div>
+    <div class="sett-card">
+      <h3>🗑 買い物リストをリセット</h3><p>全アイテムとカテゴリを初期状態に戻します。</p>
+      <button class="btn-s red" onclick="resetGr()">リセットする</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ WIZARD ══════════ -->
+<div id="wizard">
+  <div class="wiz-body">
+    <div class="wiz-logo">🏠🛒</div>
+    <div class="wiz-title">日用品 & 買い物</div>
+    <div class="wiz-sub">2つのアプリを左右スワイプで切り替え</div>
+    <div class="wiz-card"><h3>🏠 日用品管理</h3><p>タップするたびに「在庫あり → 残り〇個 → なし」とサイクル。補充が必要なものを一目で確認。</p></div>
+    <div class="wiz-card"><h3>🛒 買い物リスト</h3><p>タップで買い物リストに追加・解除。定番アイテムはカテゴリ上位に固定表示。</p></div>
+    <div class="wiz-card"><h3>👈👉 スワイプで切り替え</h3><p>画面を左右にスワイプするとアプリが切り替わります。PC はタイトルをクリックして切り替え。</p></div>
+    <div class="wiz-card"><h3>🔗 家族で共有</h3><p>⚙設定 → GitHub Gist の設定でご家族と同期できます。GitHubアカウントがあれば完全無料。</p></div>
+    <button class="btn-wiz-start" onclick="startApp()">はじめる →</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   CONSTANTS & DEFAULTS
+══════════════════════════════════════════ */
+const HH_LS={ITEMS:'nk_items',CATS:'nk_cats',NID:'nk_nid',TS:'nk_ts'};
+const GR_LS={ITEMS:'gr_items',CATS:'gr_cats',NID:'gr_nid',TS:'gr_ts'};
+const SHARED_LS={GIST_ID:'nk_gist_id',GIST_TOKEN:'nk_gist_token',WEL:'nk_wel'};
+
+const HH_CYCLE={ok:'low',low:'out',out:'ok'};
+
+const HH_DCAT=[
+  {emoji:'🚽',name:'トイレ'},{emoji:'🛁',name:'お風呂'},
+  {emoji:'🧺',name:'洗濯'},{emoji:'🍳',name:'キッチン'},
+  {emoji:'🦷',name:'衛生'},{emoji:'📦',name:'その他'},
+];
+const HH_DITEMS=[
+  {id:1,name:'トイレットペーパー',cat:'トイレ',status:'ok',lowCount:2},
+  {id:2,name:'トイレ用洗剤',cat:'トイレ',status:'ok',lowCount:1},
+  {id:3,name:'シャンプー',cat:'お風呂',status:'ok',lowCount:1},
+  {id:4,name:'コンディショナー',cat:'お風呂',status:'ok',lowCount:1},
+  {id:5,name:'ボディソープ',cat:'お風呂',status:'ok',lowCount:1},
+  {id:6,name:'洗濯洗剤',cat:'洗濯',status:'ok',lowCount:1},
+  {id:7,name:'柔軟剤',cat:'洗濯',status:'ok',lowCount:1},
+  {id:8,name:'食器用洗剤',cat:'キッチン',status:'ok',lowCount:1},
+  {id:9,name:'キッチンペーパー',cat:'キッチン',status:'ok',lowCount:2},
+  {id:10,name:'ラップ',cat:'キッチン',status:'ok',lowCount:1},
+  {id:11,name:'ゴミ袋',cat:'キッチン',status:'ok',lowCount:3},
+  {id:12,name:'ティッシュ',cat:'その他',status:'ok',lowCount:2},
+  {id:13,name:'歯磨き粉',cat:'衛生',status:'ok',lowCount:1},
+  {id:14,name:'歯ブラシ',cat:'衛生',status:'ok',lowCount:1},
+];
+
+const GR_DCAT=[
+  {emoji:'🥬',name:'野菜・果物'},{emoji:'🥩',name:'肉・魚介'},
+  {emoji:'🥛',name:'乳製品・卵'},{emoji:'🍞',name:'パン・主食・麺'},
+  {emoji:'🥫',name:'缶詰・乾物'},{emoji:'🧂',name:'調味料'},
+  {emoji:'🧃',name:'飲料'},{emoji:'🍦',name:'冷凍食品'},
+  {emoji:'🍪',name:'お菓子'},
+];
+const GR_DITEMS=[
+  {id:201,name:'たまねぎ',cat:'野菜・果物',onList:false,fav:true},
+  {id:202,name:'じゃがいも',cat:'野菜・果物',onList:false,fav:true},
+  {id:203,name:'にんじん',cat:'野菜・果物',onList:false,fav:true},
+  {id:204,name:'キャベツ',cat:'野菜・果物',onList:false,fav:false},
+  {id:205,name:'もやし',cat:'野菜・果物',onList:false,fav:false},
+  {id:206,name:'トマト',cat:'野菜・果物',onList:false,fav:false},
+  {id:207,name:'レタス',cat:'野菜・果物',onList:false,fav:false},
+  {id:208,name:'きゅうり',cat:'野菜・果物',onList:false,fav:false},
+  {id:209,name:'ほうれん草',cat:'野菜・果物',onList:false,fav:false},
+  {id:210,name:'バナナ',cat:'野菜・果物',onList:false,fav:false},
+  {id:211,name:'りんご',cat:'野菜・果物',onList:false,fav:false},
+  {id:212,name:'鶏もも肉',cat:'肉・魚介',onList:false,fav:true},
+  {id:213,name:'豚バラ肉',cat:'肉・魚介',onList:false,fav:true},
+  {id:214,name:'合いびき肉',cat:'肉・魚介',onList:false,fav:true},
+  {id:215,name:'鮭',cat:'肉・魚介',onList:false,fav:false},
+  {id:216,name:'えび',cat:'肉・魚介',onList:false,fav:false},
+  {id:217,name:'ぶり',cat:'肉・魚介',onList:false,fav:false},
+  {id:218,name:'卵',cat:'乳製品・卵',onList:false,fav:true},
+  {id:219,name:'牛乳',cat:'乳製品・卵',onList:false,fav:true},
+  {id:220,name:'バター',cat:'乳製品・卵',onList:false,fav:false},
+  {id:221,name:'ヨーグルト',cat:'乳製品・卵',onList:false,fav:false},
+  {id:222,name:'チーズ',cat:'乳製品・卵',onList:false,fav:false},
+  {id:223,name:'食パン',cat:'パン・主食・麺',onList:false,fav:true},
+  {id:224,name:'うどん',cat:'パン・主食・麺',onList:false,fav:false},
+  {id:225,name:'パスタ',cat:'パン・主食・麺',onList:false,fav:false},
+  {id:226,name:'そば',cat:'パン・主食・麺',onList:false,fav:false},
+  {id:227,name:'ツナ缶',cat:'缶詰・乾物',onList:false,fav:true},
+  {id:228,name:'コーン缶',cat:'缶詰・乾物',onList:false,fav:false},
+  {id:229,name:'わかめ',cat:'缶詰・乾物',onList:false,fav:false},
+  {id:230,name:'醤油',cat:'調味料',onList:false,fav:true},
+  {id:231,name:'みりん',cat:'調味料',onList:false,fav:false},
+  {id:232,name:'料理酒',cat:'調味料',onList:false,fav:false},
+  {id:233,name:'マヨネーズ',cat:'調味料',onList:false,fav:true},
+  {id:234,name:'ケチャップ',cat:'調味料',onList:false,fav:false},
+  {id:235,name:'ポン酢',cat:'調味料',onList:false,fav:false},
+  {id:236,name:'お茶（ペット）',cat:'飲料',onList:false,fav:true},
+  {id:237,name:'麦茶パック',cat:'飲料',onList:false,fav:false},
+  {id:238,name:'コーヒー',cat:'飲料',onList:false,fav:false},
+  {id:239,name:'冷凍野菜',cat:'冷凍食品',onList:false,fav:false},
+  {id:240,name:'冷凍うどん',cat:'冷凍食品',onList:false,fav:false},
+  {id:241,name:'冷凍餃子',cat:'冷凍食品',onList:false,fav:false},
+  {id:242,name:'チョコレート',cat:'お菓子',onList:false,fav:false},
+  {id:243,name:'ポテトチップス',cat:'お菓子',onList:false,fav:false},
+];
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let hhItems=[],hhCats=[],hhNextId=100,hhFilter='all';
+let grItems=[],grCats=[],grNextId=300,grFilter='all';
+let gistId=null,gistToken=null,polling=null,gistBusy=false;
+let hhCatEditIdx=-1, grCatEditIdx=-1;
+let currentPage=0;
+
+/* ══════════════════════════════════════════
+   SWIPE / PAGE SWITCH
+══════════════════════════════════════════ */
+let tsX=0,tsY=0,swipeDir=null;
+const slider=document.getElementById('slider');
+
+document.addEventListener('touchstart',e=>{
+  tsX=e.touches[0].clientX; tsY=e.touches[0].clientY; swipeDir=null;
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(swipeDir) return;
+  const dx=Math.abs(e.touches[0].clientX-tsX), dy=Math.abs(e.touches[0].clientY-tsY);
+  if(dx>8||dy>8) swipeDir=dx>dy?'h':'v';
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(swipeDir!=='h') return;
+  const dx=e.changedTouches[0].clientX-tsX;
+  if(dx<-70 && currentPage===0) switchPage(1);
+  else if(dx>70 && currentPage===1) switchPage(0);
+  swipeDir=null;
+},{passive:true});
+
+function switchPage(p){
+  currentPage=p;
+  slider.style.transform=`translateX(-${p*50}%)`;
+  document.querySelectorAll('.pg-dot').forEach((d,i)=>d.classList.toggle('active',i===p));
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+function init(){
+  if(!localStorage.getItem(SHARED_LS.WEL)){document.getElementById('wizard').classList.add('open');return;}
+  loadAll();
+  gistId=localStorage.getItem(SHARED_LS.GIST_ID)||null;
+  gistToken=localStorage.getItem(SHARED_LS.GIST_TOKEN)||null;
+  if(gistId&&gistToken){setSS('hh','busy','同期中...');setSS('gr','busy','同期中...');syncGist();}
+  hhRender(); grRender();
+}
+function startApp(){
+  localStorage.setItem(SHARED_LS.WEL,'1');
+  document.getElementById('wizard').classList.remove('open');
+  loadAll(); hhRender(); grRender();
+}
+function loadAll(){
+  const hi=localStorage.getItem(HH_LS.ITEMS), hc=localStorage.getItem(HH_LS.CATS);
+  hhItems=hi?JSON.parse(hi):clone(HH_DITEMS);
+  hhCats =hc?JSON.parse(hc):clone(HH_DCAT);
+  hhNextId=+(localStorage.getItem(HH_LS.NID)||100);
+  document.getElementById('hh-stxt').textContent=localStorage.getItem(HH_LS.TS)||'';
+
+  const gi=localStorage.getItem(GR_LS.ITEMS), gc=localStorage.getItem(GR_LS.CATS);
+  grItems=gi?JSON.parse(gi):clone(GR_DITEMS);
+  grCats =gc?JSON.parse(gc):clone(GR_DCAT);
+  grNextId=+(localStorage.getItem(GR_LS.NID)||300);
+  document.getElementById('gr-stxt').textContent=localStorage.getItem(GR_LS.TS)||'';
+}
+
+/* ══════════════════════════════════════════
+   LOCAL SAVE
+══════════════════════════════════════════ */
+function saveHhLocal(){
+  localStorage.setItem(HH_LS.ITEMS,JSON.stringify(hhItems));
+  localStorage.setItem(HH_LS.CATS,JSON.stringify(hhCats));
+  localStorage.setItem(HH_LS.NID,String(hhNextId));
+  const ts=fmt(new Date()); localStorage.setItem(HH_LS.TS,ts);
+  document.getElementById('hh-stxt').textContent=ts;
+}
+function saveGrLocal(){
+  localStorage.setItem(GR_LS.ITEMS,JSON.stringify(grItems));
+  localStorage.setItem(GR_LS.CATS,JSON.stringify(grCats));
+  localStorage.setItem(GR_LS.NID,String(grNextId));
+  const ts=fmt(new Date()); localStorage.setItem(GR_LS.TS,ts);
+  document.getElementById('gr-stxt').textContent=ts;
+}
+
+/* ══════════════════════════════════════════
+   GITHUB GIST SYNC
+══════════════════════════════════════════ */
+const GIST_FILE='nichiyohin_data.json';
+const GIST_API='https://api.github.com/gists/';
+
+function gistHeaders(){
+  return{'Authorization':'Bearer '+gistToken,'Accept':'application/vnd.github+json','Content-Type':'application/json'};
+}
+async function readGist(){
+  const r=await fetch(GIST_API+gistId,{headers:gistHeaders()});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const g=await r.json();
+  const f=g.files[GIST_FILE];
+  if(!f)throw new Error('ファイルが見つかりません');
+  const txt=f.content.trim();
+  return(txt&&txt!=='{}')?JSON.parse(txt):{};
+}
+async function writeGist(data){
+  const r=await fetch(GIST_API+gistId,{method:'PATCH',headers:gistHeaders(),body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(data)}}})});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+}
+async function syncGist(){
+  if(!gistId||!gistToken||gistBusy)return; gistBusy=true;
+  setSS('hh','busy','同期中...'); setSS('gr','busy','同期中...');
+  try{
+    const d=await readGist();
+    if(d.household&&d.household.items){hhItems=d.household.items;if(d.household.cats)hhCats=d.household.cats;hhNextId=d.household.nextId||100;saveHhLocal();}
+    if(d.grocery&&d.grocery.items){grItems=d.grocery.items;if(d.grocery.cats)grCats=d.grocery.cats;grNextId=d.grocery.nextId||300;saveGrLocal();}
+    const ts=fmt(new Date()); setSS('hh','ok',ts); setSS('gr','ok',ts);
+    hhRender(); grRender();
+  }catch(e){setSS('hh','err','同期エラー');setSS('gr','err','同期エラー');}
+  finally{gistBusy=false;}
+}
+async function pushAll(){
+  if(!gistId||!gistToken)return;
+  await writeGist({
+    household:{items:hhItems,cats:hhCats,nextId:hhNextId,at:new Date().toISOString()},
+    grocery:{items:grItems,cats:grCats,nextId:grNextId,at:new Date().toISOString()}
+  });
+}
+function startPoll(){if(polling)clearInterval(polling);polling=setInterval(()=>syncGist(),30000);}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&gistId&&gistToken)syncGist();});
+function setSS(app,t,x){
+  document.getElementById(app+'-sdot').className='sync-dot '+t;
+  document.getElementById(app+'-stxt').textContent=x;
+}
+async function saveHhData(){
+  saveHhLocal(); if(!gistId||!gistToken)return;
+  setSS('hh','busy','保存中...');
+  try{await pushAll();setSS('hh','ok',fmt(new Date()));}catch(e){setSS('hh','err','保存エラー');}
+}
+async function saveGrData(){
+  saveGrLocal(); if(!gistId||!gistToken)return;
+  setSS('gr','busy','保存中...');
+  try{await pushAll();setSS('gr','ok',fmt(new Date()));}catch(e){setSS('gr','err','保存エラー');}
+}
+
+/* ══════════════════════════════════════════
+   HOUSEHOLD RENDER
+══════════════════════════════════════════ */
+function setHhFilter(f){
+  hhFilter=f;
+  document.querySelectorAll('[data-f]').forEach(b=>b.classList.toggle('active-orange',b.dataset.f===f));
+  hhRender();
+}
+function hhBadge(item){
+  if(item.status==='ok') return '在庫あり';
+  if(item.status==='low') return item.lowCount?`残り${item.lowCount}個`:'残りわずか';
+  return 'なし';
+}
+function hhCatEmoji(name){const c=hhCats.find(c=>c.name===name);return c?c.emoji:'📦';}
+
+function hhRender(){
+  const mc=document.getElementById('hh-mc');
+  const visible=hhFilter==='attention'?hhItems.filter(i=>i.status!=='ok'):hhItems;
+  const bad=hhItems.filter(i=>i.status!=='ok');
+  document.getElementById('hh-alert').classList.toggle('on',bad.length>0);
+  if(!visible.length){
+    mc.innerHTML=`<div class="empty"><div class="ei">${hhFilter==='attention'?'🎉':'📦'}</div>${hhFilter==='attention'?'補充が必要なものはありません！':'アイテムがありません。'}</div>`;return;
+  }
+  const ord=hhCats.map(c=>c.name); const groups={};
+  visible.forEach(i=>{(groups[i.cat]||(groups[i.cat]=[])).push(i);});
+  mc.innerHTML=Object.keys(groups).sort((a,b)=>(ord.indexOf(a)<0?99:ord.indexOf(a))-(ord.indexOf(b)<0?99:ord.indexOf(b))).map(cat=>`
+    <div class="cat-section">
+      <div class="cat-label"><span>${hhCatEmoji(cat)}</span>${esc(cat)}</div>
+      <div class="cat-group">${groups[cat].map(item=>`
+        <div class="item-row s-${item.status}" id="hh-row-${item.id}" onclick="tapHhItem(${item.id})">
+          <div class="item-dot"></div>
+          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-badge">${hhBadge(item)}</div>
+          <button class="btn-edit-item" onclick="openHhEdit(event,${item.id})">✎</button>
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function tapHhItem(id){
+  const item=hhItems.find(i=>i.id===id);if(!item)return;
+  item.status=HH_CYCLE[item.status];
+  if(navigator.vibrate)navigator.vibrate(18);
+  saveHhData();hhRender();
+}
+function restockAll(){
+  const bad=hhItems.filter(i=>i.status!=='ok');if(!bad.length)return;
+  if(!confirm(`${bad.length}件を全て「在庫あり」に戻しますか？`))return;
+  hhItems.forEach(i=>{i.status='ok';}); saveHhData();hhRender();
+}
+
+/* ══════════════════════════════════════════
+   GROCERY RENDER
+══════════════════════════════════════════ */
+function setGrFilter(f){
+  grFilter=f;
+  document.querySelectorAll('[data-gf]').forEach(b=>b.classList.toggle('active-blue',b.dataset.gf===f));
+  grRender();
+}
+function grCatEmoji(name){const c=grCats.find(c=>c.name===name);return c?c.emoji:'🛒';}
+
+function grRender(){
+  const mc=document.getElementById('gr-mc');
+  let visible=grFilter==='buying'?grItems.filter(i=>i.onList):grItems;
+  if(!visible.length){
+    mc.innerHTML=`<div class="empty"><div class="ei">${grFilter==='buying'?'🛒':'📋'}</div>${grFilter==='buying'?'買うものがありません。タップで追加！':'アイテムがありません。'}</div>`;return;
+  }
+  const ord=grCats.map(c=>c.name); const groups={};
+  visible.forEach(i=>{(groups[i.cat]||(groups[i.cat]=[])).push(i);});
+  mc.innerHTML=Object.keys(groups).sort((a,b)=>(ord.indexOf(a)<0?99:ord.indexOf(a))-(ord.indexOf(b)<0?99:ord.indexOf(b))).map(cat=>{
+    const sorted=[...groups[cat]].sort((a,b)=>(b.fav?1:0)-(a.fav?1:0));
+    return`<div class="cat-section">
+      <div class="cat-label"><span>${grCatEmoji(cat)}</span>${esc(cat)}</div>
+      <div class="cat-group">${sorted.map(item=>`
+        <div class="gr-row ${item.onList?'g-on':'g-off'}" onclick="tapGrItem(${item.id})">
+          <div class="gr-dot"></div>
+          ${item.fav?'<span class="gr-fav">★</span>':''}
+          <div class="gr-name">${esc(item.name)}</div>
+          <div class="gr-badge">${item.onList?'買う':'···'}</div>
+          <button class="btn-gr-edit" onclick="openGrEdit(event,${item.id})">✎</button>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function tapGrItem(id){
+  const item=grItems.find(i=>i.id===id);if(!item)return;
+  item.onList=!item.onList;
+  if(navigator.vibrate)navigator.vibrate(18);
+  saveGrData();grRender();
+}
+
+/* ══════════════════════════════════════════
+   CAT SELECT HELPERS
+══════════════════════════════════════════ */
+function buildSel(selId,cats,sel){document.getElementById(selId).innerHTML=cats.map(c=>`<option value="${esc(c.name)}"${c.name===sel?' selected':''}>${c.emoji} ${esc(c.name)}</option>`).join('');}
+
+/* ══════════════════════════════════════════
+   HOUSEHOLD ADD / EDIT
+══════════════════════════════════════════ */
+function openHhAdd(){buildSel('ha-cat',hhCats,hhCats[0]?.name);document.getElementById('hh-add-modal').classList.add('open');setTimeout(()=>document.getElementById('ha-name').focus(),80);}
+function closeHhAdd(){document.getElementById('hh-add-modal').classList.remove('open');document.getElementById('ha-name').value='';document.getElementById('ha-low').value='';}
+function addHhItem(){
+  const name=document.getElementById('ha-name').value.trim();if(!name){alert('商品名を入力してください');return;}
+  hhItems.push({id:hhNextId++,name,cat:document.getElementById('ha-cat').value,status:'ok',lowCount:parseInt(document.getElementById('ha-low').value)||null});
+  saveHhData();closeHhAdd();setHhFilter('all');hhRender();
+}
+document.getElementById('hh-add-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHhAdd();});
+document.getElementById('ha-name').addEventListener('keydown',e=>{if(e.key==='Enter')addHhItem();});
+
+function openHhEdit(e,id){
+  e.stopPropagation();const item=hhItems.find(i=>i.id===id);if(!item)return;
+  buildSel('he-cat',hhCats,item.cat);
+  document.getElementById('he-id').value=id; document.getElementById('he-name').value=item.name; document.getElementById('he-low').value=item.lowCount||'';
+  document.getElementById('hh-edit-modal').classList.add('open');
+}
+function closeHhEdit(){document.getElementById('hh-edit-modal').classList.remove('open');}
+function saveHhEdit(){
+  const id=+document.getElementById('he-id').value; const item=hhItems.find(i=>i.id===id);if(!item)return;
+  const name=document.getElementById('he-name').value.trim();if(!name){alert('商品名を入力してください');return;}
+  item.name=name; item.cat=document.getElementById('he-cat').value; item.lowCount=parseInt(document.getElementById('he-low').value)||null;
+  saveHhData();closeHhEdit();hhRender();
+}
+function deleteHhItem(){
+  const id=+document.getElementById('he-id').value;const item=hhItems.find(i=>i.id===id);if(!item)return;
+  if(!confirm(`「${item.name}」を削除しますか？`))return;
+  hhItems=hhItems.filter(i=>i.id!==id);saveHhData();closeHhEdit();hhRender();
+}
+document.getElementById('hh-edit-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHhEdit();});
+
+/* ══════════════════════════════════════════
+   GROCERY ADD / EDIT
+══════════════════════════════════════════ */
+function openGrAdd(){buildSel('ga-cat',grCats,grCats[0]?.name);document.getElementById('ga-fav').checked=false;document.getElementById('gr-add-modal').classList.add('open');setTimeout(()=>document.getElementById('ga-name').focus(),80);}
+function closeGrAdd(){document.getElementById('gr-add-modal').classList.remove('open');document.getElementById('ga-name').value='';}
+function addGrItem(){
+  const name=document.getElementById('ga-name').value.trim();if(!name){alert('商品名を入力してください');return;}
+  grItems.push({id:grNextId++,name,cat:document.getElementById('ga-cat').value,onList:false,fav:document.getElementById('ga-fav').checked});
+  saveGrData();closeGrAdd();setGrFilter('all');grRender();
+}
+document.getElementById('gr-add-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeGrAdd();});
+document.getElementById('ga-name').addEventListener('keydown',e=>{if(e.key==='Enter')addGrItem();});
+
+function openGrEdit(e,id){
+  e.stopPropagation();const item=grItems.find(i=>i.id===id);if(!item)return;
+  buildSel('ge-cat',grCats,item.cat);
+  document.getElementById('ge-id').value=id; document.getElementById('ge-name').value=item.name; document.getElementById('ge-fav').checked=!!item.fav;
+  document.getElementById('gr-edit-modal').classList.add('open');
+}
+function closeGrEdit(){document.getElementById('gr-edit-modal').classList.remove('open');}
+function saveGrEdit(){
+  const id=+document.getElementById('ge-id').value;const item=grItems.find(i=>i.id===id);if(!item)return;
+  const name=document.getElementById('ge-name').value.trim();if(!name){alert('商品名を入力してください');return;}
+  item.name=name; item.cat=document.getElementById('ge-cat').value; item.fav=document.getElementById('ge-fav').checked;
+  saveGrData();closeGrEdit();grRender();
+}
+function deleteGrItem(){
+  const id=+document.getElementById('ge-id').value;const item=grItems.find(i=>i.id===id);if(!item)return;
+  if(!confirm(`「${item.name}」を削除しますか？`))return;
+  grItems=grItems.filter(i=>i.id!==id);saveGrData();closeGrEdit();grRender();
+}
+document.getElementById('gr-edit-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeGrEdit();});
+
+/* ══════════════════════════════════════════
+   HOUSEHOLD CAT MANAGEMENT
+══════════════════════════════════════════ */
+function openHhCatMgr(){renderHhCatList();document.getElementById('cat-mgr-hh').classList.add('open');}
+function closeHhCatMgr(){document.getElementById('cat-mgr-hh').classList.remove('open');}
+function renderHhCatList(){
+  document.getElementById('hh-cat-list').innerHTML=hhCats.map((c,i)=>{
+    const cnt=hhItems.filter(it=>it.cat===c.name).length;
+    return`<div class="cat-mgr-row"><span class="cat-mgr-emoji">${c.emoji}</span><span class="cat-mgr-name">${esc(c.name)}</span><span class="cat-mgr-count">${cnt}件</span><button class="btn-cat-edit" onclick="openHhCatEdit(${i})">編集</button></div>`;
+  }).join('');
+}
+function openHhCatEdit(idx){
+  hhCatEditIdx=idx; const isNew=idx===-1; const c=isNew?{emoji:'📦',name:''}:hhCats[idx];
+  document.getElementById('hh-cat-edit-title').textContent=isNew?'カテゴリを追加':'カテゴリを編集';
+  document.getElementById('hce-emoji').value=c.emoji; document.getElementById('hce-name').value=c.name;
+  document.getElementById('hce-del-btn').style.display=isNew?'none':'';
+  document.getElementById('cat-edit-hh').classList.add('open');
+}
+function closeHhCatEdit(){document.getElementById('cat-edit-hh').classList.remove('open');}
+function saveHhCatEdit(){
+  const emoji=document.getElementById('hce-emoji').value.trim()||'📦';
+  const name=document.getElementById('hce-name').value.trim();if(!name){alert('カテゴリ名を入力してください');return;}
+  if(hhCatEditIdx===-1){if(hhCats.find(c=>c.name===name)){alert('同じ名前のカテゴリがすでにあります');return;}hhCats.push({emoji,name});}
+  else{const old=hhCats[hhCatEditIdx].name;if(old!==name&&hhCats.find(c=>c.name===name)){alert('同じ名前のカテゴリがすでにあります');return;}hhItems.forEach(it=>{if(it.cat===old)it.cat=name;});hhCats[hhCatEditIdx]={emoji,name};}
+  saveHhData();renderHhCatList();closeHhCatEdit();hhRender();
+}
+function deleteHhCat(){
+  if(hhCatEditIdx<0)return;const cat=hhCats[hhCatEditIdx];
+  const affected=hhItems.filter(it=>it.cat===cat.name);const fallback=hhCats.find((_,i)=>i!==hhCatEditIdx);
+  if(!fallback){alert('最後のカテゴリは削除できません。');return;}
+  let msg=`「${cat.name}」を削除しますか？`;if(affected.length>0)msg+=`\n${affected.length}件が「${fallback.name}」に移動されます。`;
+  if(!confirm(msg))return;
+  hhItems.forEach(it=>{if(it.cat===cat.name)it.cat=fallback.name;});hhCats.splice(hhCatEditIdx,1);
+  saveHhData();renderHhCatList();closeHhCatEdit();hhRender();
+}
+document.getElementById('cat-mgr-hh').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHhCatMgr();});
+document.getElementById('cat-edit-hh').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHhCatEdit();});
+
+/* ══════════════════════════════════════════
+   GROCERY CAT MANAGEMENT
+══════════════════════════════════════════ */
+function openGrCatMgr(){renderGrCatList();document.getElementById('cat-mgr-gr').classList.add('open');}
+function closeGrCatMgr(){document.getElementById('cat-mgr-gr').classList.remove('open');}
+function renderGrCatList(){
+  document.getElementById('gr-cat-list').innerHTML=grCats.map((c,i)=>{
+    const cnt=grItems.filter(it=>it.cat===c.name).length;
+    return`<div class="cat-mgr-row"><span class="cat-mgr-emoji">${c.emoji}</span><span class="cat-mgr-name">${esc(c.name)}</span><span class="cat-mgr-count">${cnt}件</span><button class="btn-cat-edit" onclick="openGrCatEdit(${i})">編集</button></div>`;
+  }).join('');
+}
+function openGrCatEdit(idx){
+  grCatEditIdx=idx;const isNew=idx===-1;const c=isNew?{emoji:'🥬',name:''}:grCats[idx];
+  document.getElementById('gr-cat-edit-title').textContent=isNew?'カテゴリを追加':'カテゴリを編集';
+  document.getElementById('gce-emoji').value=c.emoji;document.getElementById('gce-name').value=c.name;
+  document.getElementById('gce-del-btn').style.display=isNew?'none':'';
+  document.getElementById('cat-edit-gr').classList.add('open');
+}
+function closeGrCatEdit(){document.getElementById('cat-edit-gr').classList.remove('open');}
+function saveGrCatEdit(){
+  const emoji=document.getElementById('gce-emoji').value.trim()||'🛒';
+  const name=document.getElementById('gce-name').value.trim();if(!name){alert('カテゴリ名を入力してください');return;}
+  if(grCatEditIdx===-1){if(grCats.find(c=>c.name===name)){alert('同じ名前のカテゴリがすでにあります');return;}grCats.push({emoji,name});}
+  else{const old=grCats[grCatEditIdx].name;if(old!==name&&grCats.find(c=>c.name===name)){alert('同じ名前のカテゴリがすでにあります');return;}grItems.forEach(it=>{if(it.cat===old)it.cat=name;});grCats[grCatEditIdx]={emoji,name};}
+  saveGrData();renderGrCatList();closeGrCatEdit();grRender();
+}
+function deleteGrCat(){
+  if(grCatEditIdx<0)return;const cat=grCats[grCatEditIdx];
+  const affected=grItems.filter(it=>it.cat===cat.name);const fallback=grCats.find((_,i)=>i!==grCatEditIdx);
+  if(!fallback){alert('最後のカテゴリは削除できません。');return;}
+  let msg=`「${cat.name}」を削除しますか？`;if(affected.length>0)msg+=`\n${affected.length}件が「${fallback.name}」に移動されます。`;
+  if(!confirm(msg))return;
+  grItems.forEach(it=>{if(it.cat===cat.name)it.cat=fallback.name;});grCats.splice(grCatEditIdx,1);
+  saveGrData();renderGrCatList();closeGrCatEdit();grRender();
+}
+document.getElementById('cat-mgr-gr').addEventListener('click',e=>{if(e.target===e.currentTarget)closeGrCatMgr();});
+document.getElementById('cat-edit-gr').addEventListener('click',e=>{if(e.target===e.currentTarget)closeGrCatEdit();});
+
+/* ══════════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════════ */
+function openHhSett(){
+  document.getElementById('gist-id-in').value=localStorage.getItem(SHARED_LS.GIST_ID)||'';
+  document.getElementById('gist-token-in').value=localStorage.getItem(SHARED_LS.GIST_TOKEN)||'';
+  document.getElementById('btn-disconnect').style.display=(gistId&&gistToken)?'block':'none';
+  hideFbMsg();document.getElementById('hh-sett').classList.add('open');
+}
+function closeHhSett(){document.getElementById('hh-sett').classList.remove('open');}
+function openGrSett(){document.getElementById('gr-sett').classList.add('open');}
+function closeGrSett(){document.getElementById('gr-sett').classList.remove('open');}
+
+async function connectGist(){
+  const id=document.getElementById('gist-id-in').value.trim();
+  const tok=document.getElementById('gist-token-in').value.trim();
+  if(!id){showFbMsg('err','Gist IDを入力してください');return;}
+  if(!tok||!tok.startsWith('ghp_')&&!tok.startsWith('github_pat_')){showFbMsg('err','トークンを入力してください（ghp_ または github_pat_ で始まる）');return;}
+  showFbMsg('ok','接続確認中...');
+  gistId=id; gistToken=tok;
+  try{
+    const d=await readGist();
+    // データがあれば取り込み、なければ現在のデータを書き込む
+    if(d.household&&d.household.items){hhItems=d.household.items;if(d.household.cats)hhCats=d.household.cats;hhNextId=d.household.nextId||100;saveHhLocal();}
+    if(d.grocery&&d.grocery.items){grItems=d.grocery.items;if(d.grocery.cats)grCats=d.grocery.cats;grNextId=d.grocery.nextId||300;saveGrLocal();}
+    await pushAll();
+    localStorage.setItem(SHARED_LS.GIST_ID,id);
+    localStorage.setItem(SHARED_LS.GIST_TOKEN,tok);
+    showFbMsg('ok','✅ 接続成功！奥さんにも同じGist IDとトークンを共有してください。');
+    setSS('hh','ok',fmt(new Date()));setSS('gr','ok',fmt(new Date()));
+    document.getElementById('btn-disconnect').style.display='block';
+    startPoll();hhRender();grRender();
+  }catch(e){gistId=null;gistToken=null;showFbMsg('err','❌ 接続できませんでした：'+e.message);}
+}
+function disconnectGist(){
+  if(!confirm('GitHub Gist連携を解除します。'))return;
+  gistId=null;gistToken=null;
+  localStorage.removeItem(SHARED_LS.GIST_ID);localStorage.removeItem(SHARED_LS.GIST_TOKEN);
+  if(polling){clearInterval(polling);polling=null;}
+  setSS('hh','def','💾 ローカル');setSS('gr','def','💾 ローカル');
+  document.getElementById('btn-disconnect').style.display='none';
+  showFbMsg('ok','連携を解除しました');
+}
+function showFbMsg(t,m){const e=document.getElementById('fb-msg');e.className='s-msg show '+t;e.textContent=m;}
+function hideFbMsg(){document.getElementById('fb-msg').className='s-msg';}
+function resetHh(){if(!confirm('日用品データを全てリセットしますか？'))return;hhItems=clone(HH_DITEMS);hhCats=clone(HH_DCAT);hhNextId=100;saveHhData();closeHhSett();hhRender();}
+function resetGr(){if(!confirm('買い物リストを全てリセットしますか？'))return;grItems=clone(GR_DITEMS);grCats=clone(GR_DCAT);grNextId=300;saveGrData();closeGrSett();grRender();}
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(d){return`${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+
+/* ══════════════════════════════════════════
+   START
+══════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
