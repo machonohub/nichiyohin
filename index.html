@@ -51,10 +51,16 @@
     @keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
     .sync-txt{font-size:11px;color:rgba(255,255,255,.3);}
 
-    /* ══ ALERT BAR ══ */
-    .alert-bar{background:linear-gradient(135deg,rgba(255,140,66,.2),rgba(249,115,22,.15));border:1px solid rgba(255,140,66,.3);color:#ff8c42;padding:8px 16px;font-size:12px;font-weight:700;display:none;align-items:center;justify-content:space-between;margin:10px 14px 0;border-radius:12px;}
-    .alert-bar.on{display:flex;}
-    .btn-restock-all{background:rgba(255,140,66,.2);border:1px solid rgba(255,140,66,.4);border-radius:7px;color:#ff8c42;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;}
+    /* ══ HEADER ALERT ══ */
+    .h-alert{display:none;align-items:center;gap:6px;}
+    .h-alert.on{display:flex;}
+    .h-alert-txt{font-size:11px;font-weight:700;white-space:nowrap;}
+    .h-alert-txt-hh{color:#ff8c42;}
+    .h-alert-txt-gr{color:#00c6ff;}
+    .h-alert-btn{border-radius:7px;font-size:10px;font-weight:700;padding:4px 9px;cursor:pointer;white-space:nowrap;line-height:1.4;}
+    .h-alert-btn:active{opacity:.75;}
+    .h-alert-btn-hh{background:rgba(255,140,66,.18);border:1px solid rgba(255,140,66,.35);color:#ff8c42;}
+    .h-alert-btn-gr{background:rgba(0,198,255,.15);border:1px solid rgba(0,198,255,.35);color:#00c6ff;}
 
     /* ══ MAIN CONTENT ══ */
     main{padding:12px 14px;}
@@ -70,7 +76,7 @@
     .item-row:active{background:rgba(255,255,255,.04);}
     .item-row::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;transition:all .15s;}
     /* OK — muted like grocery off-state */
-    .item-row.s-ok{opacity:.38;}
+    .item-row.s-ok{opacity:.5;}
     .item-row.s-ok::before{background:transparent;box-shadow:none;}
     /* LOW / OUT — highlighted */
     .item-row.s-low::before{background:#ff8c42;box-shadow:0 0 6px #ff8c42;}
@@ -95,7 +101,7 @@
     .gr-row:active{background:rgba(255,255,255,.04);}
     .gr-row::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;transition:all .15s;}
     /* OFF state — muted */
-    .gr-row.g-off{opacity:.38;}
+    .gr-row.g-off{opacity:.5;}
     .gr-row.g-off::before{background:transparent;}
     /* ON state — highlighted */
     .gr-row.g-on{opacity:1;}
@@ -197,6 +203,17 @@
     .s-msg.ok {background:rgba(0,212,170,.12);color:#00d4aa;border:1px solid rgba(0,212,170,.2);}
     .s-msg.err{background:rgba(255,69,105,.12);color:#ff4569;border:1px solid rgba(255,69,105,.2);}
 
+    /* ══ FLOATING ACTION BUTTON ══ */
+    .fab-group{position:fixed;bottom:24px;right:20px;z-index:95;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+    .fab-btn{width:54px;height:54px;border-radius:50%;border:none;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s,opacity .2s;}
+    .fab-btn:active{transform:scale(.88);}
+    .fab-btn-hh{background:linear-gradient(135deg,#ff8c42,#f97316);color:#fff;box-shadow:0 4px 18px rgba(255,140,66,.55);}
+    .fab-btn-gr{background:linear-gradient(135deg,#00b4d8,#0077b6);color:#fff;box-shadow:0 4px 18px rgba(0,180,216,.55);}
+    .fab-pill{display:flex;background:rgba(15,15,30,.9);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:3px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,0,0,.4);}
+    .fab-pill-btn{padding:7px 14px;border-radius:16px;font-size:12px;font-weight:700;color:rgba(255,255,255,.4);border:none;background:none;cursor:pointer;white-space:nowrap;transition:all .2s;}
+    .fab-pill-btn.active-orange{background:linear-gradient(135deg,#ff8c42,#f97316);color:#fff;box-shadow:0 2px 8px rgba(255,140,66,.4);}
+    .fab-pill-btn.active-blue  {background:linear-gradient(135deg,#00b4d8,#0077b6);color:#fff;box-shadow:0 2px 8px rgba(0,180,216,.4);}
+
     /* ══ WIZARD ══ */
     #wizard{display:none;position:fixed;inset:0;background:#0d0d1a;z-index:500;overflow-y:auto;}
     #wizard.open{display:block;}
@@ -222,12 +239,11 @@
       <div class="h-row">
         <span class="h-title-hh" onclick="switchPage(1)" title="買い物リストへ">🏠 日用品</span>
         <div class="h-right">
-          <div class="seg-ctrl">
-            <button class="seg-btn active-orange" data-f="all"       onclick="setHhFilter('all')">すべて</button>
-            <button class="seg-btn"               data-f="attention" onclick="setHhFilter('attention')">要補充</button>
+          <div class="h-alert" id="h-alert-hh">
+            <span class="h-alert-txt h-alert-txt-hh">⚠️ 補充が必要</span>
+            <button class="h-alert-btn h-alert-btn-hh" onclick="restockAll()">全て在庫あり</button>
           </div>
-          <button class="btn-add-hh" onclick="openHhAdd()">＋ 追加</button>
-          <button class="btn-gear"   onclick="openHhSett()">⚙</button>
+          <button class="btn-gear" onclick="openHhSett()">⚙</button>
         </div>
       </div>
       <div class="h-sync">
@@ -235,10 +251,6 @@
         <span class="sync-txt" id="hh-stxt">--</span>
       </div>
     </header>
-    <div class="alert-bar" id="hh-alert">
-      <span>⚠️ 補充が必要</span>
-      <button class="btn-restock-all" onclick="restockAll()">全て在庫ありにする</button>
-    </div>
     <main id="hh-mc"></main>
   </div>
 
@@ -248,12 +260,11 @@
       <div class="h-row">
         <span class="h-title-gr" onclick="switchPage(0)" title="日用品管理へ">🛒 買い物</span>
         <div class="h-right">
-          <div class="seg-ctrl">
-            <button class="seg-btn active-blue" data-gf="all"    onclick="setGrFilter('all')">全て</button>
-            <button class="seg-btn"             data-gf="buying" onclick="setGrFilter('buying')">買うもの</button>
+          <div class="h-alert" id="h-alert-gr">
+            <span class="h-alert-txt h-alert-txt-gr">🛒 買う物あり</span>
+            <button class="h-alert-btn h-alert-btn-gr" onclick="clearAllGrList()">全て購入済み</button>
           </div>
-          <button class="btn-add-gr" onclick="openGrAdd()">＋ 追加</button>
-          <button class="btn-gear"   onclick="openGrSett()">⚙</button>
+          <button class="btn-gear" onclick="openGrSett()">⚙</button>
         </div>
       </div>
       <div class="h-sync">
@@ -271,6 +282,24 @@
 <div class="page-dots">
   <div class="pg-dot active" onclick="switchPage(0)"></div>
   <div class="pg-dot"        onclick="switchPage(1)"></div>
+</div>
+
+<!-- FAB household -->
+<div class="fab-group" id="fab-hh">
+  <div class="fab-pill">
+    <button class="fab-pill-btn active-orange" data-f="all"       onclick="setHhFilter('all')">すべて</button>
+    <button class="fab-pill-btn"               data-f="attention" onclick="setHhFilter('attention')">要補充</button>
+  </div>
+  <button class="fab-btn fab-btn-hh" onclick="openHhAdd()">＋</button>
+</div>
+
+<!-- FAB grocery -->
+<div class="fab-group" id="fab-gr" style="display:none">
+  <div class="fab-pill">
+    <button class="fab-pill-btn active-blue" data-gf="all"    onclick="setGrFilter('all')">全て</button>
+    <button class="fab-pill-btn"             data-gf="buying" onclick="setGrFilter('buying')">買うもの</button>
+  </div>
+  <button class="fab-btn fab-btn-gr" onclick="openGrAdd()">＋</button>
 </div>
 
 <!-- ══════════ HOUSEHOLD MODALS ══════════ -->
@@ -510,12 +539,14 @@ const HH_DITEMS=[
 ];
 
 const GR_DCAT=[
+  {emoji:'📝',name:'簡易領域'},
   {emoji:'🥬',name:'野菜・果物'},{emoji:'🥩',name:'肉・魚介'},
   {emoji:'🥛',name:'乳製品・卵'},{emoji:'🍞',name:'パン・主食・麺'},
   {emoji:'🥫',name:'缶詰・乾物'},{emoji:'🧂',name:'調味料'},
   {emoji:'🧃',name:'飲料'},{emoji:'🍦',name:'冷凍食品'},
   {emoji:'🍪',name:'お菓子'},
 ];
+const KANTAN='簡易領域';
 const GR_DITEMS=[
   {id:201,name:'たまねぎ',cat:'野菜・果物',onList:false,fav:true},
   {id:202,name:'じゃがいも',cat:'野菜・果物',onList:false,fav:true},
@@ -597,6 +628,9 @@ function switchPage(p){
   currentPage=p;
   slider.style.transform=`translateX(-${p*50}%)`;
   document.querySelectorAll('.pg-dot').forEach((d,i)=>d.classList.toggle('active',i===p));
+  document.getElementById('fab-hh').style.display=p===0?'flex':'none';
+  document.getElementById('fab-gr').style.display=p===1?'flex':'none';
+  localStorage.setItem('nk_page',p);
 }
 
 /* ══════════════════════════════════════════
@@ -608,6 +642,8 @@ function init(){
   gistId=localStorage.getItem(SHARED_LS.GIST_ID)||null;
   gistToken=localStorage.getItem(SHARED_LS.GIST_TOKEN)||null;
   if(gistId&&gistToken){setSS('hh','busy','同期中...');setSS('gr','busy','同期中...');syncGist();}
+  const savedPage=+(localStorage.getItem('nk_page')||0);
+  if(savedPage===1)switchPage(1);
   hhRender(); grRender();
 }
 function startApp(){
@@ -626,6 +662,8 @@ function loadAll(){
   grItems=gi?JSON.parse(gi):clone(GR_DITEMS);
   grCats =gc?JSON.parse(gc):clone(GR_DCAT);
   grNextId=+(localStorage.getItem(GR_LS.NID)||300);
+  // migration: 簡易領域が存在しなければ先頭に追加
+  if(!grCats.find(c=>c.name===KANTAN)) grCats.unshift({emoji:'📝',name:KANTAN});
   document.getElementById('gr-stxt').textContent=localStorage.getItem(GR_LS.TS)||'';
 }
 
@@ -675,7 +713,7 @@ async function syncGist(){
   try{
     const d=await readGist();
     if(d.household&&d.household.items){hhItems=d.household.items;if(d.household.cats)hhCats=d.household.cats;hhNextId=d.household.nextId||100;saveHhLocal();}
-    if(d.grocery&&d.grocery.items){grItems=d.grocery.items;if(d.grocery.cats)grCats=d.grocery.cats;grNextId=d.grocery.nextId||300;saveGrLocal();}
+    if(d.grocery&&d.grocery.items){grItems=d.grocery.items;if(d.grocery.cats)grCats=d.grocery.cats;grNextId=d.grocery.nextId||300;if(!grCats.find(c=>c.name===KANTAN))grCats.unshift({emoji:'📝',name:KANTAN});saveGrLocal();}
     const ts=fmt(new Date()); setSS('hh','ok',ts); setSS('gr','ok',ts);
     hhRender(); grRender();
   }catch(e){setSS('hh','err','同期エラー');setSS('gr','err','同期エラー');}
@@ -724,7 +762,7 @@ function hhRender(){
   const mc=document.getElementById('hh-mc');
   const visible=hhFilter==='attention'?hhItems.filter(i=>i.status!=='ok'):hhItems;
   const bad=hhItems.filter(i=>i.status!=='ok');
-  document.getElementById('hh-alert').classList.toggle('on',bad.length>0);
+  document.getElementById('h-alert-hh').classList.toggle('on',bad.length>0);
   if(!visible.length){
     mc.innerHTML=`<div class="empty"><div class="ei">${hhFilter==='attention'?'🎉':'📦'}</div>${hhFilter==='attention'?'補充が必要なものはありません！':'アイテムがありません。'}</div>`;return;
   }
@@ -755,6 +793,14 @@ function restockAll(){
   if(!confirm(`${bad.length}件を全て「在庫あり」に戻しますか？`))return;
   hhItems.forEach(i=>{i.status='ok';}); saveHhData();hhRender();
 }
+function clearAllGrList(){
+  const buying=grItems.filter(i=>i.onList);if(!buying.length)return;
+  if(!confirm(`${buying.length}件を全て購入済みにしますか？`))return;
+  // 簡易領域は削除、それ以外はonList:false
+  grItems=grItems.filter(i=>!(i.onList&&i.cat===KANTAN));
+  grItems.forEach(i=>{if(i.onList)i.onList=false;});
+  saveGrData();grRender();
+}
 
 /* ══════════════════════════════════════════
    GROCERY RENDER
@@ -768,23 +814,29 @@ function grCatEmoji(name){const c=grCats.find(c=>c.name===name);return c?c.emoji
 
 function grRender(){
   const mc=document.getElementById('gr-mc');
-  let visible=grFilter==='buying'?grItems.filter(i=>i.onList):grItems;
+  const buying=grItems.filter(i=>i.onList);
+  document.getElementById('h-alert-gr').classList.toggle('on',buying.length>0);
+  let visible=grFilter==='buying'?buying:grItems;
   if(!visible.length){
     mc.innerHTML=`<div class="empty"><div class="ei">${grFilter==='buying'?'🛒':'📋'}</div>${grFilter==='buying'?'買うものがありません。タップで追加！':'アイテムがありません。'}</div>`;return;
   }
   const ord=grCats.map(c=>c.name); const groups={};
   visible.forEach(i=>{(groups[i.cat]||(groups[i.cat]=[])).push(i);});
-  mc.innerHTML=Object.keys(groups).sort((a,b)=>(ord.indexOf(a)<0?99:ord.indexOf(a))-(ord.indexOf(b)<0?99:ord.indexOf(b))).map(cat=>{
-    const sorted=[...groups[cat]].sort((a,b)=>(b.fav?1:0)-(a.fav?1:0));
+  mc.innerHTML=Object.keys(groups).sort((a,b)=>{
+    if(a===KANTAN)return-1; if(b===KANTAN)return 1;
+    return(ord.indexOf(a)<0?99:ord.indexOf(a))-(ord.indexOf(b)<0?99:ord.indexOf(b));
+  }).map(cat=>{
+    const isKantan=cat===KANTAN;
+    const sorted=isKantan?groups[cat]:[...groups[cat]].sort((a,b)=>(b.fav?1:0)-(a.fav?1:0));
     return`<div class="cat-section">
-      <div class="cat-label"><span>${grCatEmoji(cat)}</span>${esc(cat)}</div>
+      <div class="cat-label"><span>${grCatEmoji(cat)}</span>${esc(cat)}${isKantan?'<span style="font-size:10px;color:rgba(255,255,255,.3);font-weight:400;margin-left:6px;">タップで削除</span>':''}</div>
       <div class="cat-group">${sorted.map(item=>`
         <div class="gr-row ${item.onList?'g-on':'g-off'}" onclick="tapGrItem(${item.id})">
           <div class="gr-dot"></div>
-          ${item.fav?'<span class="gr-fav">★</span>':''}
+          ${!isKantan&&item.fav?'<span class="gr-fav">★</span>':''}
           <div class="gr-name">${esc(item.name)}</div>
           <div class="gr-badge">${item.onList?'買う':'···'}</div>
-          <button class="btn-gr-edit" onclick="openGrEdit(event,${item.id})">✎</button>
+          ${!isKantan?`<button class="btn-gr-edit" onclick="openGrEdit(event,${item.id})">✎</button>`:''}
         </div>`).join('')}
       </div>
     </div>`;
@@ -793,6 +845,12 @@ function grRender(){
 
 function tapGrItem(id){
   const item=grItems.find(i=>i.id===id);if(!item)return;
+  if(item.cat===KANTAN){
+    // 簡易領域はタップで即削除
+    grItems=grItems.filter(i=>i.id!==id);
+    if(navigator.vibrate)navigator.vibrate(18);
+    saveGrData();grRender();return;
+  }
   item.onList=!item.onList;
   if(navigator.vibrate)navigator.vibrate(18);
   saveGrData();grRender();
@@ -839,11 +897,13 @@ document.getElementById('hh-edit-modal').addEventListener('click',e=>{if(e.targe
 /* ══════════════════════════════════════════
    GROCERY ADD / EDIT
 ══════════════════════════════════════════ */
-function openGrAdd(){buildSel('ga-cat',grCats,grCats[0]?.name);document.getElementById('ga-fav').checked=false;document.getElementById('gr-add-modal').classList.add('open');setTimeout(()=>document.getElementById('ga-name').focus(),80);}
+function openGrAdd(){buildSel('ga-cat',grCats,KANTAN);document.getElementById('ga-fav').checked=false;document.getElementById('gr-add-modal').classList.add('open');setTimeout(()=>document.getElementById('ga-name').focus(),80);}
 function closeGrAdd(){document.getElementById('gr-add-modal').classList.remove('open');document.getElementById('ga-name').value='';}
 function addGrItem(){
   const name=document.getElementById('ga-name').value.trim();if(!name){alert('商品名を入力してください');return;}
-  grItems.push({id:grNextId++,name,cat:document.getElementById('ga-cat').value,onList:false,fav:document.getElementById('ga-fav').checked});
+  const cat=document.getElementById('ga-cat').value;
+  const onList=cat===KANTAN?true:false;
+  grItems.push({id:grNextId++,name,cat,onList,fav:document.getElementById('ga-fav').checked});
   saveGrData();closeGrAdd();setGrFilter('all');grRender();
 }
 document.getElementById('gr-add-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeGrAdd();});
@@ -915,7 +975,8 @@ function closeGrCatMgr(){document.getElementById('cat-mgr-gr').classList.remove(
 function renderGrCatList(){
   document.getElementById('gr-cat-list').innerHTML=grCats.map((c,i)=>{
     const cnt=grItems.filter(it=>it.cat===c.name).length;
-    return`<div class="cat-mgr-row"><span class="cat-mgr-emoji">${c.emoji}</span><span class="cat-mgr-name">${esc(c.name)}</span><span class="cat-mgr-count">${cnt}件</span><button class="btn-cat-edit" onclick="openGrCatEdit(${i})">編集</button></div>`;
+    const editBtn=c.name===KANTAN?`<span style="font-size:11px;color:rgba(255,255,255,.2);">編集不可</span>`:`<button class="btn-cat-edit" onclick="openGrCatEdit(${i})">編集</button>`;
+    return`<div class="cat-mgr-row"><span class="cat-mgr-emoji">${c.emoji}</span><span class="cat-mgr-name">${esc(c.name)}</span><span class="cat-mgr-count">${cnt}件</span>${editBtn}</div>`;
   }).join('');
 }
 function openGrCatEdit(idx){
