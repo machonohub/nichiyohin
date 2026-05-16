@@ -203,6 +203,12 @@
     .s-msg.ok {background:rgba(0,212,170,.12);color:#00d4aa;border:1px solid rgba(0,212,170,.2);}
     .s-msg.err{background:rgba(255,69,105,.12);color:#ff4569;border:1px solid rgba(255,69,105,.2);}
 
+    /* ══ DRAG & DROP ══ */
+    [data-did]{cursor:grab;touch-action:pan-y;}
+    [data-did].dnd-on{opacity:.25!important;cursor:grabbing;}
+    [data-did].dnd-top{box-shadow:inset 0 2px 0 rgba(255,255,255,.6);}
+    [data-did].dnd-bot{box-shadow:inset 0 -2px 0 rgba(255,255,255,.6);}
+
     /* ══ FLOATING ACTION BUTTON ══ */
     .fab-group{position:fixed;bottom:24px;right:20px;z-index:95;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
     .fab-btn{width:54px;height:54px;border-radius:50%;border:none;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s,opacity .2s;}
@@ -774,7 +780,7 @@ function hhRender(){
     <div class="cat-section">
       <div class="cat-label"><span>${hhCatEmoji(cat)}</span>${esc(cat)}</div>
       <div class="cat-group">${groups[cat].map(item=>`
-        <div class="item-row s-${item.status}" id="hh-row-${item.id}" onclick="tapHhItem(${item.id})">
+        <div class="item-row s-${item.status}" id="hh-row-${item.id}" data-did="${item.id}" draggable="true" onclick="tapHhItem(${item.id})">
           <div class="item-dot"></div>
           <div class="item-name">${esc(item.name)}</div>
           <div class="item-badge">${hhBadge(item)}</div>
@@ -785,6 +791,7 @@ function hhRender(){
 }
 
 function tapHhItem(id){
+  if(dndJustDragged)return;
   const item=hhItems.find(i=>i.id===id);if(!item)return;
   item.status=HH_CYCLE[item.status];
   if(navigator.vibrate)navigator.vibrate(18);
@@ -833,7 +840,7 @@ function grRender(){
     return`<div class="cat-section">
       <div class="cat-label"><span>${grCatEmoji(cat)}</span>${esc(cat)}${isKantan?'<span style="font-size:10px;color:rgba(255,255,255,.3);font-weight:400;margin-left:6px;">タップで削除</span>':''}</div>
       <div class="cat-group">${sorted.map(item=>`
-        <div class="gr-row ${item.onList?'g-on':'g-off'}" onclick="tapGrItem(${item.id})">
+        <div class="gr-row ${item.onList?'g-on':'g-off'}" data-did="${item.id}" draggable="true" onclick="tapGrItem(${item.id})">
           <div class="gr-dot"></div>
           ${!isKantan&&item.fav?'<span class="gr-fav">★</span>':''}
           <div class="gr-name">${esc(item.name)}</div>
@@ -846,6 +853,7 @@ function grRender(){
 }
 
 function tapGrItem(id){
+  if(dndJustDragged)return;
   const item=grItems.find(i=>i.id===id);if(!item)return;
   if(item.cat===KANTAN){
     // 簡易領域はタップで即削除
@@ -1057,6 +1065,107 @@ function resetHh(){if(!confirm('日用品データを全てリセットします
 function resetGr(){if(!confirm('買い物リストを全てリセットしますか？'))return;grItems=clone(GR_DITEMS);grCats=clone(GR_DCAT);grNextId=300;saveGrData();closeGrSett();grRender();}
 
 /* ══════════════════════════════════════════
+   DRAG & DROP REORDER
+══════════════════════════════════════════ */
+let dndSrcId=null,dndSrcType=null,dndJustDragged=false;
+let dndGhost=null,dndTouchActive=false,dndLongTimer=null,dndTx=0,dndTy=0;
+
+function dndClear(){document.querySelectorAll('.dnd-on,.dnd-top,.dnd-bot').forEach(el=>el.classList.remove('dnd-on','dnd-top','dnd-bot'));}
+function dndRow(el){return el?.closest('[data-did]');}
+function dndAfter(row,y){const r=row.getBoundingClientRect();return y>r.top+r.height/2;}
+function dndReorder(type,srcId,tgtId,after){
+  const arr=type==='hh'?hhItems:grItems;
+  const src=arr.find(i=>i.id===srcId),tgt=arr.find(i=>i.id===tgtId);
+  if(!src||!tgt||srcId===tgtId||src.cat!==tgt.cat)return;
+  arr.splice(arr.indexOf(src),1);
+  arr.splice(after?arr.indexOf(tgt)+1:arr.indexOf(tgt),0,src);
+  if(type==='hh'){saveHhData();hhRender();}else{saveGrData();grRender();}
+}
+function dndDone(){
+  dndClear();dndJustDragged=true;setTimeout(()=>{dndJustDragged=false;},350);
+  dndSrcId=null;dndSrcType=null;
+}
+
+function initDnd(){
+  ['hh-mc','gr-mc'].forEach(mcId=>{
+    const mc=document.getElementById(mcId),type=mcId.startsWith('hh')?'hh':'gr';
+
+    /* ── Desktop HTML5 D&D ── */
+    mc.addEventListener('dragstart',e=>{
+      const row=dndRow(e.target);if(!row)return;
+      dndSrcId=+row.dataset.did;dndSrcType=type;row.classList.add('dnd-on');
+      e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text','x');
+    });
+    mc.addEventListener('dragover',e=>{
+      e.preventDefault();
+      document.querySelectorAll('.dnd-top,.dnd-bot').forEach(el=>el.classList.remove('dnd-top','dnd-bot'));
+      const row=dndRow(e.target);
+      if(row&&+row.dataset.did!==dndSrcId)row.classList.add(dndAfter(row,e.clientY)?'dnd-bot':'dnd-top');
+    });
+    mc.addEventListener('drop',e=>{
+      e.preventDefault();
+      const row=dndRow(e.target);
+      if(row&&dndSrcId!=null&&+row.dataset.did!==dndSrcId)dndReorder(type,dndSrcId,+row.dataset.did,dndAfter(row,e.clientY));
+      dndDone();
+    });
+    mc.addEventListener('dragend',()=>{dndClear();dndSrcId=null;});
+
+    /* ── Mobile Long-press Touch D&D ── */
+    mc.addEventListener('touchstart',e=>{
+      const row=dndRow(e.target);if(!row)return;
+      dndTx=e.touches[0].clientX;dndTy=e.touches[0].clientY;
+      dndLongTimer=setTimeout(()=>{
+        const rect=row.getBoundingClientRect();
+        dndSrcId=+row.dataset.did;dndSrcType=type;dndTouchActive=true;
+        dndGhost=row.cloneNode(true);
+        Object.assign(dndGhost.style,{position:'fixed',left:rect.left+'px',top:rect.top+'px',
+          width:rect.width+'px',zIndex:'999',pointerEvents:'none',opacity:'.88',
+          borderRadius:'12px',boxShadow:'0 8px 32px rgba(0,0,0,.75)',transition:'none'});
+        document.body.appendChild(dndGhost);
+        row.classList.add('dnd-on');
+        if(navigator.vibrate)navigator.vibrate(35);
+      },450);
+    },{passive:true});
+
+    mc.addEventListener('touchmove',e=>{
+      const t=e.touches[0];
+      if(!dndTouchActive){
+        if(Math.abs(t.clientX-dndTx)>10||Math.abs(t.clientY-dndTy)>10)clearTimeout(dndLongTimer);
+        return;
+      }
+      e.preventDefault();e.stopPropagation();
+      if(dndGhost){dndGhost.style.left=(t.clientX-30)+'px';dndGhost.style.top=(t.clientY-24)+'px';}
+      // Find element under finger (hide ghost first)
+      if(dndGhost)dndGhost.style.display='none';
+      const under=document.elementFromPoint(t.clientX,t.clientY);
+      if(dndGhost)dndGhost.style.display='';
+      document.querySelectorAll('.dnd-top,.dnd-bot').forEach(el=>el.classList.remove('dnd-top','dnd-bot'));
+      const row=dndRow(under);
+      if(row&&+row.dataset.did!==dndSrcId)row.classList.add(dndAfter(row,t.clientY)?'dnd-bot':'dnd-top');
+    },{passive:false});
+
+    mc.addEventListener('touchend',e=>{
+      clearTimeout(dndLongTimer);
+      if(!dndTouchActive)return;
+      e.stopPropagation();
+      const t=e.changedTouches[0];
+      if(dndGhost)dndGhost.style.display='none';
+      const under=document.elementFromPoint(t.clientX,t.clientY);
+      if(dndGhost){dndGhost.remove();dndGhost=null;}
+      const row=dndRow(under);
+      if(row&&dndSrcId!=null&&+row.dataset.did!==dndSrcId)dndReorder(type,dndSrcId,+row.dataset.did,dndAfter(row,t.clientY));
+      dndDone();dndTouchActive=false;
+    },{passive:true});
+
+    mc.addEventListener('touchcancel',()=>{
+      clearTimeout(dndLongTimer);
+      if(dndGhost){dndGhost.remove();dndGhost=null;}
+      dndClear();dndTouchActive=false;dndSrcId=null;
+    },{passive:true});
+  });
+}
+
+/* ══════════════════════════════════════════
    UTILS
 ══════════════════════════════════════════ */
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1066,6 +1175,7 @@ function clone(o){return JSON.parse(JSON.stringify(o));}
 /* ══════════════════════════════════════════
    START
 ══════════════════════════════════════════ */
+initDnd();
 init();
 </script>
 </body>
