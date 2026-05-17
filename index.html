@@ -620,11 +620,13 @@ document.addEventListener('touchstart',e=>{
   tsX=e.touches[0].clientX; tsY=e.touches[0].clientY; swipeDir=null;
 },{passive:true});
 document.addEventListener('touchmove',e=>{
+  if(dndTouchActive) return; // DND中はスワイプ検出しない
   if(swipeDir) return;
   const dx=Math.abs(e.touches[0].clientX-tsX), dy=Math.abs(e.touches[0].clientY-tsY);
   if(dx>8||dy>8) swipeDir=dx>dy?'h':'v';
 },{passive:true});
 document.addEventListener('touchend',e=>{
+  if(dndTouchActive){swipeDir=null;return;} // DND中はスワイプ無視
   if(swipeDir!=='h') return;
   const dx=e.changedTouches[0].clientX-tsX;
   if(dx<-70 && currentPage===0) switchPage(1);
@@ -1112,7 +1114,7 @@ function initDnd(){
     });
     mc.addEventListener('dragend',()=>{dndClear();dndSrcId=null;});
 
-    /* ── Mobile Long-press Touch D&D ── */
+    /* ── Mobile Long-press Touch D&D (touchstart only, mc level) ── */
     mc.addEventListener('touchstart',e=>{
       const row=dndRow(e.target);if(!row)return;
       dndTx=e.touches[0].clientX;dndTy=e.touches[0].clientY;
@@ -1129,52 +1131,52 @@ function initDnd(){
         if(navigator.vibrate)navigator.vibrate(35);
       },450);
     },{passive:true});
-
-    mc.addEventListener('touchmove',e=>{
-      const t=e.touches[0];
-      if(!dndTouchActive){
-        if(Math.abs(t.clientX-dndTx)>10||Math.abs(t.clientY-dndTy)>10)clearTimeout(dndLongTimer);
-        return;
-      }
-      e.preventDefault();e.stopPropagation();
-      // ゴーストを指に追従
-      if(dndGhost){dndGhost.style.left=(t.clientX-30)+'px';dndGhost.style.top=(t.clientY-24)+'px';}
-      // ゴーストを一時非表示にして指下の要素を取得
-      if(dndGhost)dndGhost.style.display='none';
-      const under=document.elementFromPoint(t.clientX,t.clientY);
-      if(dndGhost)dndGhost.style.display='';
-      // インジケーター更新 & ターゲット記録
-      document.querySelectorAll('.dnd-top,.dnd-bot').forEach(el=>el.classList.remove('dnd-top','dnd-bot'));
-      const row=dndRow(under);
-      if(row&&+row.dataset.did!==dndSrcId){
-        const af=dndAfter(row,t.clientY);
-        row.classList.add(af?'dnd-bot':'dnd-top');
-        dndLastTgtId=+row.dataset.did;   // ← ここでターゲットを保存
-        dndLastAfter=af;
-      } else {
-        dndLastTgtId=null;
-      }
-    },{passive:false});
-
-    mc.addEventListener('touchend',e=>{
-      clearTimeout(dndLongTimer);
-      if(!dndTouchActive)return;
-      e.stopPropagation();
-      // ghostを先に消す
-      if(dndGhost){dndGhost.remove();dndGhost=null;}
-      // touchmoveで記録したターゲットを使って並べ替え（elementFromPointより確実）
-      if(dndLastTgtId!=null&&dndSrcId!=null&&dndLastTgtId!==dndSrcId){
-        dndReorder(type,dndSrcId,dndLastTgtId,dndLastAfter);
-      }
-      dndDone();dndTouchActive=false;
-    },{passive:true});
-
-    mc.addEventListener('touchcancel',()=>{
-      clearTimeout(dndLongTimer);
-      if(dndGhost){dndGhost.remove();dndGhost=null;}
-      dndClear();dndTouchActive=false;dndSrcId=null;dndLastTgtId=null;
-    },{passive:true});
   });
+
+  /* ── Document-level touch handlers for DND (DOM再描画後も確実に発火) ── */
+  document.addEventListener('touchmove',e=>{
+    const t=e.touches[0];
+    if(!dndTouchActive){
+      if(Math.abs(t.clientX-dndTx)>10||Math.abs(t.clientY-dndTy)>10)clearTimeout(dndLongTimer);
+      return;
+    }
+    e.preventDefault();
+    // ゴーストを指に追従
+    if(dndGhost){dndGhost.style.left=(t.clientX-30)+'px';dndGhost.style.top=(t.clientY-24)+'px';}
+    // ゴーストを一時非表示にして指下の要素を取得
+    if(dndGhost)dndGhost.style.display='none';
+    const under=document.elementFromPoint(t.clientX,t.clientY);
+    if(dndGhost)dndGhost.style.display='';
+    // インジケーター更新 & ターゲット記録
+    document.querySelectorAll('.dnd-top,.dnd-bot').forEach(el=>el.classList.remove('dnd-top','dnd-bot'));
+    const row=dndRow(under);
+    if(row&&+row.dataset.did!==dndSrcId){
+      const af=dndAfter(row,t.clientY);
+      row.classList.add(af?'dnd-bot':'dnd-top');
+      dndLastTgtId=+row.dataset.did;
+      dndLastAfter=af;
+    } else {
+      dndLastTgtId=null;
+    }
+  },{passive:false});
+
+  document.addEventListener('touchend',e=>{
+    clearTimeout(dndLongTimer);
+    if(!dndTouchActive)return;
+    // ghostを先に消す
+    if(dndGhost){dndGhost.remove();dndGhost=null;}
+    // touchmoveで記録したターゲットを使って並べ替え
+    if(dndLastTgtId!=null&&dndSrcId!=null&&dndLastTgtId!==dndSrcId){
+      dndReorder(dndSrcType,dndSrcId,dndLastTgtId,dndLastAfter);
+    }
+    dndDone();dndTouchActive=false;
+  },{passive:true});
+
+  document.addEventListener('touchcancel',()=>{
+    clearTimeout(dndLongTimer);
+    if(dndGhost){dndGhost.remove();dndGhost=null;}
+    dndClear();dndTouchActive=false;dndSrcId=null;dndLastTgtId=null;
+  },{passive:true});
 }
 
 /* ══════════════════════════════════════════
