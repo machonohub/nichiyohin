@@ -1069,6 +1069,8 @@ function resetGr(){if(!confirm('買い物リストを全てリセットします
 ══════════════════════════════════════════ */
 let dndSrcId=null,dndSrcType=null,dndJustDragged=false;
 let dndGhost=null,dndTouchActive=false,dndLongTimer=null,dndTx=0,dndTy=0;
+// touchmove中にターゲットを追跡し、touchendで使用する（elementFromPointより確実）
+let dndLastTgtId=null,dndLastAfter=false;
 
 function dndClear(){document.querySelectorAll('.dnd-on,.dnd-top,.dnd-bot').forEach(el=>el.classList.remove('dnd-on','dnd-top','dnd-bot'));}
 function dndRow(el){return el?.closest('[data-did]');}
@@ -1083,7 +1085,7 @@ function dndReorder(type,srcId,tgtId,after){
 }
 function dndDone(){
   dndClear();dndJustDragged=true;setTimeout(()=>{dndJustDragged=false;},350);
-  dndSrcId=null;dndSrcType=null;
+  dndSrcId=null;dndSrcType=null;dndLastTgtId=null;
 }
 
 function initDnd(){
@@ -1114,6 +1116,7 @@ function initDnd(){
     mc.addEventListener('touchstart',e=>{
       const row=dndRow(e.target);if(!row)return;
       dndTx=e.touches[0].clientX;dndTy=e.touches[0].clientY;
+      dndLastTgtId=null;
       dndLongTimer=setTimeout(()=>{
         const rect=row.getBoundingClientRect();
         dndSrcId=+row.dataset.did;dndSrcType=type;dndTouchActive=true;
@@ -1134,33 +1137,42 @@ function initDnd(){
         return;
       }
       e.preventDefault();e.stopPropagation();
+      // ゴーストを指に追従
       if(dndGhost){dndGhost.style.left=(t.clientX-30)+'px';dndGhost.style.top=(t.clientY-24)+'px';}
-      // Find element under finger (hide ghost first)
+      // ゴーストを一時非表示にして指下の要素を取得
       if(dndGhost)dndGhost.style.display='none';
       const under=document.elementFromPoint(t.clientX,t.clientY);
       if(dndGhost)dndGhost.style.display='';
+      // インジケーター更新 & ターゲット記録
       document.querySelectorAll('.dnd-top,.dnd-bot').forEach(el=>el.classList.remove('dnd-top','dnd-bot'));
       const row=dndRow(under);
-      if(row&&+row.dataset.did!==dndSrcId)row.classList.add(dndAfter(row,t.clientY)?'dnd-bot':'dnd-top');
+      if(row&&+row.dataset.did!==dndSrcId){
+        const af=dndAfter(row,t.clientY);
+        row.classList.add(af?'dnd-bot':'dnd-top');
+        dndLastTgtId=+row.dataset.did;   // ← ここでターゲットを保存
+        dndLastAfter=af;
+      } else {
+        dndLastTgtId=null;
+      }
     },{passive:false});
 
     mc.addEventListener('touchend',e=>{
       clearTimeout(dndLongTimer);
       if(!dndTouchActive)return;
       e.stopPropagation();
-      const t=e.changedTouches[0];
-      if(dndGhost)dndGhost.style.display='none';
-      const under=document.elementFromPoint(t.clientX,t.clientY);
+      // ghostを先に消す
       if(dndGhost){dndGhost.remove();dndGhost=null;}
-      const row=dndRow(under);
-      if(row&&dndSrcId!=null&&+row.dataset.did!==dndSrcId)dndReorder(type,dndSrcId,+row.dataset.did,dndAfter(row,t.clientY));
+      // touchmoveで記録したターゲットを使って並べ替え（elementFromPointより確実）
+      if(dndLastTgtId!=null&&dndSrcId!=null&&dndLastTgtId!==dndSrcId){
+        dndReorder(type,dndSrcId,dndLastTgtId,dndLastAfter);
+      }
       dndDone();dndTouchActive=false;
     },{passive:true});
 
     mc.addEventListener('touchcancel',()=>{
       clearTimeout(dndLongTimer);
       if(dndGhost){dndGhost.remove();dndGhost=null;}
-      dndClear();dndTouchActive=false;dndSrcId=null;
+      dndClear();dndTouchActive=false;dndSrcId=null;dndLastTgtId=null;
     },{passive:true});
   });
 }
